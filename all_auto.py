@@ -1,12 +1,15 @@
 import pyautogui
 import time
+import win32gui
 import pyperclip
 import pygetwindow as gw
 import speech_recognition as sr
 
+from pywinauto import Application
+
 # Variables
-profile_number = 10
-time_diff_between_adding_proxy = 1.5
+profile_number = 5
+time_diff_between_adding_proxy = 2.5
 time_after_update_proxy = 20
 time_after_run = 19
 first_link = "https://tinyurl.com/Mehedi-1908-N5k"
@@ -122,15 +125,40 @@ def activate_window(window):
     except Exception as e:
         print(f"Failed to activate window: {window.title if window else 'Unknown'}, Error: {e}")
 
-def paste_link_in_window(window, first_link):
+# def paste_link_in_window(window, first_link):
+#     try:
+#         activate_window(window)  # Bring the window to the foreground
+#         pyperclip.copy(first_link)  # Copy the link to the clipboard
+#         pyautogui.hotkey('ctrl', 'v')  # Paste the link from clipboard
+#         pyautogui.press('enter')  # Press Enter to navigate to the link
+#         time.sleep(1)  # Wait to ensure the link is processed
+#     except Exception as e:
+#         print(f"Failed to paste link in window: {window.title if window else 'Unknown'}, Error: {e}")
+
+def paste_and_press_enter(window_handle):
     try:
-        activate_window(window)  # Bring the window to the foreground
-        pyperclip.copy(first_link)  # Copy the link to the clipboard
-        pyautogui.hotkey('ctrl', 'v')  # Paste the link from clipboard
-        pyautogui.press('enter')  # Press Enter to navigate to the link
-        time.sleep(1)  # Wait to ensure the link is processed
+        # Connect to the window by handle
+        app = Application(backend='uia').connect(handle=window_handle)
+        # Get the main window of the application
+        window = app.window(handle=window_handle)
+        # Paste content
+        window.type_keys('^v', pause=0.08)  # Reduced pause
+        # Press Enter
+        window.type_keys('{ENTER}', pause=0.05)  # Reduced pause
+        print(f"Pasted content and pressed Enter in window handle: {window_handle}")
     except Exception as e:
-        print(f"Failed to paste link in window: {window.title if window else 'Unknown'}, Error: {e}")
+        print(f"Failed to paste and press Enter in window handle: {window_handle}, Error: {e}")
+
+# Callback function to process each window
+def enum_windows_callback(hwnd, windows):
+    title = win32gui.GetWindowText(hwnd)
+    if title.startswith("profile"):
+        windows.append(hwnd)
+
+# Get all window handles
+window_handles = []
+win32gui.EnumWindows(enum_windows_callback, window_handles)
+
 
 def click_point_in_window(window, image_name):
     try:
@@ -154,9 +182,9 @@ windows = gw.getAllWindows()
 # Filter windows that start with the specified prefix
 windows_to_target = [window for window in windows if window.title.lower().startswith(prefix.lower())]
 
-# Paste the link in each filtered window
-for window in windows_to_target:
-    paste_link_in_window(window, first_link)
+# Iterate over all window handles
+for handle in window_handles:
+    paste_and_press_enter(handle)
 
 # Wait for 10 seconds before starting the click task
 time.sleep(10)
