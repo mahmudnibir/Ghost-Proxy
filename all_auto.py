@@ -21,16 +21,36 @@ last_activated_window = None
 
 time.sleep(1)
 
-def locate_and_click(image_name, confidence=0.8):
+# def locate_and_click(image_name, confidence=0.8):
     
-#     Locate an image on the screen and click it.
+# #     Locate an image on the screen and click it.
     
-    location = pyautogui.locateCenterOnScreen(image_name, confidence=confidence)
-    if location:
-        pyautogui.click(location)
-        print(f"Clicked on {image_name}")
-    else:
-        print(f"Image '{image_name}' not found on the screen.")
+#     location = pyautogui.locateCenterOnScreen(image_name, confidence=confidence)
+#     if location:
+#         pyautogui.click(location)
+#         print(f"Clicked on {image_name}")
+#     else:
+#         print(f"Image '{image_name}' not found on the screen.")
+
+def locate_and_click(image_path, timeout=10):
+    button_location = None
+    start_time = time.time()
+
+    while not button_location:
+        try:
+            button_location = pyautogui.locateCenterOnScreen(image_path, confidence=0.7)
+        except pyautogui.ImageNotFoundException:
+            time.sleep(0.1)  # Brief pause before retrying
+            continue
+
+        if button_location:
+            pyautogui.click(button_location)
+            print(f"Clicked on the button at {button_location}")
+            return True  # Successfully clicked the button
+
+        if time.time() - start_time > timeout:
+            print(f"Button did not appear within the timeout period for '{image_path}'. Skipping...")
+            return False  # Timeout, move on to the next task
 
 def activate_window_contains(keyword):
     global last_activated_window
@@ -42,7 +62,7 @@ def activate_window_contains(keyword):
         if isinstance(window.title, str) and keyword in window.title:
             print(f"Activating window with title '{window.title}'")
             window.activate()  # Bring the window to the foreground
-            time.sleep(3)  # Wait to ensure the window is activated
+            time.sleep(1.5)  # Wait to ensure the window is activated
             last_activated_window = window
             found = True
             break
@@ -53,10 +73,31 @@ def activate_window_contains(keyword):
 # Activate the window with "GoLogin" in the title
 activate_window_contains("GoLogin")
 
+def click_button(image_path, profile_number, timeout=10):
+    for _ in range(profile_number):
+        button_location = None
+        start_time = time.time()
+        while not button_location:
+            try:
+                button_location = pyautogui.locateCenterOnScreen(image_path, confidence=0.7)
+            except pyautogui.ImageNotFoundException:
+                print("Button not found. Retrying...")
+                time.sleep(0.1)  # Brief pause before retrying
+                continue
+
+            if button_location:
+                pyautogui.click(button_location)
+                print(f"Clicked on the button at {button_location}")
+                break  # Exit the loop once the button is clicked
+
+            if time.time() - start_time > timeout:
+                print("Still waiting for the button to appear...")
+                start_time = time.time()  # Reset the timer, continue waiting
+
+
 # Add profiles
-for _ in range(profile_number):
-    locate_and_click('add_profile.png')
-    time.sleep(time_diff_between_adding_proxy)
+click_button('add_profile.png', profile_number)
+
 
 # Select all profiles
 locate_and_click('select_all_profile.png')
@@ -163,10 +204,16 @@ win32gui.EnumWindows(enum_windows_callback, window_handles)
 def click_point_in_window(window, image_name):
     try:
         activate_window(window)  # Bring the window to the foreground
-        locate_and_click(image_name)
-        time.sleep(1.5)  # Wait to ensure the click is registered
+        if locate_and_click(image_name, timeout=10):
+            time.sleep(0.8)  # Adding a brief pause after the click if necessary
+            print(f"Clicked on '{image_name}' in the window '{window.title}'")
+        else:
+            print(f"'{image_name}' button not found in window '{window.title}', skipping the task.")
+        
+        time.sleep(1)  # Wait to ensure the click is registered
     except Exception as e:
-        print(f"Failed to click point in window: {window.title if window else 'Unknown'}, Error: {e}")
+        print(f"Failed to click point in window '{window.title}': {e}")
+
 
 def click_point_in_website(window, image_name):
     try:
@@ -212,7 +259,7 @@ def close_windows_with_title_starting_with(prefix):
         try:
             print(f"Closing window with title: {window.title}")
             window.close()  # Close the window
-            time.sleep(0.2)  # Wait for a moment to ensure the window closes properly
+            time.sleep(0.5)  # Wait for a moment to ensure the window closes properly
         except Exception as e:
             print(f"Failed to close window with title: {window.title}, Error: {e}")
 
