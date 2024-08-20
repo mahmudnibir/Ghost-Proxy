@@ -4,12 +4,12 @@ import win32gui
 import pyperclip
 import pygetwindow as gw
 import speech_recognition as sr
-
+import asyncio
 from pywinauto import Application
 
 # Variables
 profile_number = 5
-time_diff_between_adding_proxy = 2.5
+# time_diff_between_adding_proxy = 2.5
 time_after_update_proxy = 20
 time_after_run = 19
 first_link = "https://tinyurl.com/Mehedi-1908-N5k"
@@ -20,17 +20,6 @@ prefix = "profile"  # Define the prefix for the window titles you want to target
 last_activated_window = None
 
 time.sleep(1)
-
-# def locate_and_click(image_name, confidence=0.8):
-    
-# #     Locate an image on the screen and click it.
-    
-#     location = pyautogui.locateCenterOnScreen(image_name, confidence=confidence)
-#     if location:
-#         pyautogui.click(location)
-#         print(f"Clicked on {image_name}")
-#     else:
-#         print(f"Image '{image_name}' not found on the screen.")
 
 def locate_and_click(image_path, timeout=10):
     button_location = None
@@ -54,7 +43,6 @@ def locate_and_click(image_path, timeout=10):
 
 def activate_window_contains(keyword):
     global last_activated_window
-    # Get all windows
     windows = gw.getWindowsWithTitle('')
     found = False
 
@@ -94,10 +82,9 @@ def click_button(image_path, profile_number, timeout=10):
                 print("Still waiting for the button to appear...")
                 start_time = time.time()  # Reset the timer, continue waiting
 
-
 # Add profiles
 click_button('add_profile.png', profile_number)
-
+time.sleep(0.5)
 
 # Select all profiles
 locate_and_click('select_all_profile.png')
@@ -112,20 +99,16 @@ def get_proxies_from_file(file_path, num_proxies):
     with open(file_path, 'r') as file:
         proxies = file.readlines()
         
-    # Ensure there are enough proxies in the file
     if len(proxies) < num_proxies:
         print("Not enough proxies in the file.")
         return None
 
-    # Get the required number of proxies
     selected_proxies = proxies[:num_proxies]
     remaining_proxies = proxies[num_proxies:]
 
-    # Write the remaining proxies back to the file
     with open(file_path, 'w') as file:
         file.writelines(remaining_proxies)
     
-    # Return the selected proxies as a single string to paste
     return ''.join(selected_proxies)
 
 # File path of the proxy.txt
@@ -136,12 +119,10 @@ proxies_to_paste = get_proxies_from_file(proxy_file_path, profile_number)
 
 if proxies_to_paste:
     pyperclip.copy(proxies_to_paste)  # Copy the proxies to clipboard
-
-    # Paste proxy content
     locate_and_click('paste_proxy.png')
-    time.sleep(0.3)
+    time.sleep(0.1)
     pyautogui.hotkey('ctrl', 'v')
-    time.sleep(0.8)
+    time.sleep(0.5)
     locate_and_click('update_proxy.png')
     time.sleep(time_after_update_proxy)
 else:
@@ -166,31 +147,16 @@ def activate_window(window):
     except Exception as e:
         print(f"Failed to activate window: {window.title if window else 'Unknown'}, Error: {e}")
 
-# def paste_link_in_window(window, first_link):
-#     try:
-#         activate_window(window)  # Bring the window to the foreground
-#         pyperclip.copy(first_link)  # Copy the link to the clipboard
-#         pyautogui.hotkey('ctrl', 'v')  # Paste the link from clipboard
-#         pyautogui.press('enter')  # Press Enter to navigate to the link
-#         time.sleep(1)  # Wait to ensure the link is processed
-#     except Exception as e:
-#         print(f"Failed to paste link in window: {window.title if window else 'Unknown'}, Error: {e}")
-
 def paste_and_press_enter(window_handle):
     try:
-        # Connect to the window by handle
         app = Application(backend='uia').connect(handle=window_handle)
-        # Get the main window of the application
         window = app.window(handle=window_handle)
-        # Paste content
-        window.type_keys('^v', pause=0.08)  # Reduced pause
-        # Press Enter
-        window.type_keys('{ENTER}', pause=0.05)  # Reduced pause
+        window.type_keys('^v', pause=0.08)
+        window.type_keys('{ENTER}', pause=0.05)
         print(f"Pasted content and pressed Enter in window handle: {window_handle}")
     except Exception as e:
         print(f"Failed to paste and press Enter in window handle: {window_handle}, Error: {e}")
 
-# Callback function to process each window
 def enum_windows_callback(hwnd, windows):
     title = win32gui.GetWindowText(hwnd)
     if title.startswith("profile"):
@@ -200,84 +166,78 @@ def enum_windows_callback(hwnd, windows):
 window_handles = []
 win32gui.EnumWindows(enum_windows_callback, window_handles)
 
-
-def click_point_in_window(window, image_name):
+async def click_point_in_window(window, image_name):
     try:
-        activate_window(window)  # Bring the window to the foreground
+        activate_window(window)
         if locate_and_click(image_name, timeout=10):
-            time.sleep(0.8)  # Adding a brief pause after the click if necessary
             print(f"Clicked on '{image_name}' in the window '{window.title}'")
         else:
             print(f"'{image_name}' button not found in window '{window.title}', skipping the task.")
-        
-        time.sleep(1)  # Wait to ensure the click is registered
+        await asyncio.sleep(1)  # Wait asynchronously
     except Exception as e:
         print(f"Failed to click point in window '{window.title}': {e}")
 
-
-def click_point_in_website(window, image_name):
+async def click_point_in_website(window, coordinates):
     try:
-        activate_window(window)  # Bring the window to the foreground
-        pyautogui.click(image_name)
-        time.sleep(1.5)  # Wait to ensure the click is registered
+        activate_window(window)
+        pyautogui.click(coordinates)
+        await asyncio.sleep(1.5)  # Wait asynchronously
     except Exception as e:
         print(f"Failed to click point in website: {window.title if window else 'Unknown'}, Error: {e}")
 
-# Get all open windows
-windows = gw.getAllWindows()
-
-# Filter windows that start with the specified prefix
-windows_to_target = [window for window in windows if window.title.lower().startswith(prefix.lower())]
-
-# Iterate over all window handles
-for handle in window_handles:
-    paste_and_press_enter(handle)
-
-# Wait for 10 seconds before starting the click task
-time.sleep(10)
-
-# Click on the point in each filtered window
-for window in windows_to_target:
-    click_point_in_window(window, 'click_on_link.png')
-time.sleep(15)
-
-for window in windows_to_target:
-    # click_point_in_website(window, 'click_on_website.png')
-    # pyautogui.click(190, 360)
-    click_point_in_website(window, (190, 360))
-
-# Function to close all windows with a specific prefix
-def close_windows_with_title_starting_with(prefix):
-    # Get all open windows
+async def main():
     windows = gw.getAllWindows()
+    windows_to_target = [window for window in windows if window.title.lower().startswith(prefix.lower())]
 
-    # Filter windows that start with the specified prefix
+    tasks = []
+
+    for handle in window_handles:
+        paste_and_press_enter(handle)
+
+    await asyncio.sleep(10)
+
+    for window in windows_to_target:
+        tasks.append(click_point_in_window(window, 'click_on_link.png'))
+
+    await asyncio.gather(*tasks)
+    
+    await asyncio.sleep(15)
+
+    tasks = []
+
+    for window in windows_to_target:
+        tasks.append(click_point_in_website(window, (190, 360)))
+
+    await asyncio.gather(*tasks)
+
+# Run the asynchronous main function
+asyncio.run(main())
+
+def close_windows_with_title_starting_with(prefix):
+    windows = gw.getAllWindows()
     windows_to_close = [window for window in windows if window.title.lower().startswith(prefix.lower())]
 
-    # Close each filtered window
     for window in windows_to_close:
         try:
             print(f"Closing window with title: {window.title}")
-            window.close()  # Close the window
-            time.sleep(0.5)  # Wait for a moment to ensure the window closes properly
+            window.close()
+            time.sleep(0.5)
         except Exception as e:
             print(f"Failed to close window with title: {window.title}, Error: {e}")
 
 def activate_window(title):
-    # Get the window with the specified title
     try:
         windows = gw.getWindowsWithTitle(title)
         if windows:
-            window = windows[0]  # Get the first window with the matching title
+            window = windows[0]
             print(f"Activating window with title '{title}'")
-            window.activate()  # Bring the window to the foreground
-            time.sleep(2)  # Wait to ensure the window is activated
+            window.activate()
+            time.sleep(2)
         else:
             print(f"Window with title '{title}' not found.")
     except Exception as e:
         print(f"Error activating window with title '{title}': {e}")
 
-# Function to handle "delete all" command
 def handle_delete_all():
     global last_activated_window
     if last_activated_window:
@@ -287,7 +247,6 @@ def handle_delete_all():
     else:
         print("No window was activated previously.")
 
-# Voice command functionality
 def listen_for_commands():
     recognizer = sr.Recognizer()
     microphone = sr.Microphone()
@@ -296,7 +255,6 @@ def listen_for_commands():
 
     while True:
         with microphone as source:
-            # Adjust the recognizer sensitivity to ambient noise and listen
             recognizer.adjust_for_ambient_noise(source)
             audio = recognizer.listen(source)
 
@@ -307,12 +265,13 @@ def listen_for_commands():
             if "delete all" in command.lower():
                 handle_delete_all()
                 activate_window(window_title)
-                locate_and_click('delete_button.png')  # Replace with actual image name
                 time.sleep(0.5)
-                locate_and_click('yes_button.png')  # Replace with actual image name
+                locate_and_click('delete_button.png')
+                time.sleep(0.5)
+                locate_and_click('yes_button.png')
                 time.sleep(0.5)
 
-                break  # Exit the loop after handling the command
+                break  # Exit the loop after handling
             else:
                 print("No valid command recognized.")
         
