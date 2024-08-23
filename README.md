@@ -1,6 +1,3 @@
-Here’s the README with emojis added for a modern touch:
-
----
 
 **Black Hat SEO 🚀**
 
