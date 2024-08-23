@@ -1,7 +1,7 @@
 
 
 ```markdown
-# GoLogin_auto_proxy 🚀
+# Black Hat SEO 🚀
 
 Welcome to **GoLogin_auto_proxy**! This Python script is designed to automate the management and execution of proxy profiles in GoLogin. With just a few commands, you can handle everything from profile creation to proxy assignment and web interactions, all controlled by your voice!
 
@@ -18,9 +18,10 @@ Welcome to **GoLogin_auto_proxy**! This Python script is designed to automate th
 - **Python 3.12**: Make sure you have Python 3.12 installed.
 - **GoLogin**: Launch GoLogin and keep it on the homepage before running the script.
 - **Required Python Libraries**: Install the libraries using:
-  ```bash
+
+```bash
   pip install pyautogui pyperclip pygetwindow SpeechRecognition asyncio pywinauto pypiwin32
-  ```
+```
 
 ## 🛠️ Usage
 
@@ -84,5 +85,4 @@ This script helps you identify exact screen coordinates for accurate interaction
 
 ---
 
-Happy automating with GoLogin_auto_proxy!
-```
+Black Hat SEO
