@@ -8,11 +8,11 @@ import asyncio
 from pywinauto import Application
 
 # Variables
-profile_number = 5
-# time_diff_between_adding_proxy = 2.5
-time_after_update_proxy = 20
-time_after_run = 19
-first_link = "https://tinyurl.com/Mehedi-1908-N5k"
+profile_number = 10  # select as much as you need
+time_after_update_proxy = 20  # time to delete flags
+time_after_run = 20  # time to finish run
+website_coordinates = (190, 360)  # position where to click at website
+first_link = "https://tinyurl.com/Mehedi-2308-5K"  # link to paste after run
 window_title = "Browser Profiles - GoLogin 3.3.53 Jupiter"  # The title of the window to switch to
 prefix = "profile"  # Define the prefix for the window titles you want to target
 
@@ -21,13 +21,13 @@ last_activated_window = None
 
 time.sleep(1)
 
-def locate_and_click(image_path, timeout=10):
+def locate_and_click(image_path, timeout=15):
     button_location = None
     start_time = time.time()
 
     while not button_location:
         try:
-            button_location = pyautogui.locateCenterOnScreen(image_path, confidence=0.7)
+            button_location = pyautogui.locateCenterOnScreen(image_path, confidence=0.8)
         except pyautogui.ImageNotFoundException:
             time.sleep(0.1)  # Brief pause before retrying
             continue
@@ -50,7 +50,7 @@ def activate_window_contains(keyword):
         if isinstance(window.title, str) and keyword in window.title:
             print(f"Activating window with title '{window.title}'")
             window.activate()  # Bring the window to the foreground
-            time.sleep(1.5)  # Wait to ensure the window is activated
+            time.sleep(1)  # Wait to ensure the window is activated
             last_activated_window = window
             found = True
             break
@@ -61,7 +61,7 @@ def activate_window_contains(keyword):
 # Activate the window with "GoLogin" in the title
 activate_window_contains("GoLogin")
 
-def click_button(image_path, profile_number, timeout=10):
+def click_button(image_path, profile_number, timeout=15):
     for _ in range(profile_number):
         button_location = None
         start_time = time.time()
@@ -82,17 +82,41 @@ def click_button(image_path, profile_number, timeout=10):
                 print("Still waiting for the button to appear...")
                 start_time = time.time()  # Reset the timer, continue waiting
 
-# Add profiles
+
+#waits till next button appears. this way it reduces time or time related errors.
+def wait_till_button_appear(image_path, extra_time=0, timeout=15):
+    button_location = None
+    start_time = time.time()
+    
+    while not button_location:
+        try:
+            button_location = pyautogui.locateCenterOnScreen(image_path, confidence=0.7)
+        except pyautogui.ImageNotFoundException:
+            print("Button not found. Retrying...")
+            time.sleep(0.1)  # Brief pause before retrying
+            continue
+        
+        if button_location:
+            print(f"Button found, waiting is over.")
+            time.sleep(extra_time)
+            break  # Exit the loop once the button is found
+        
+        if time.time() - start_time > timeout:
+            print("Timeout reached. Button did not appear.")
+            return 0  # Return 0 if timeout is reached
+        
 click_button('add_profile.png', profile_number)
-time.sleep(0.5)
+wait_till_button_appear('add_profile.png')
 
 # Select all profiles
 locate_and_click('select_all_profile.png')
-time.sleep(1)
+wait_till_button_appear('proxy_button.png', extra_time=0.1)
+# time.sleep(0.5)
 
 # Click on proxy
 locate_and_click('proxy_button.png')
-time.sleep(1)
+wait_till_button_appear('paste_proxy.png', extra_time=0.1)
+# time.sleep(0.5)
 
 # Function to read proxies from file and cut the required number
 def get_proxies_from_file(file_path, num_proxies):
@@ -120,9 +144,10 @@ proxies_to_paste = get_proxies_from_file(proxy_file_path, profile_number)
 if proxies_to_paste:
     pyperclip.copy(proxies_to_paste)  # Copy the proxies to clipboard
     locate_and_click('paste_proxy.png')
-    time.sleep(0.1)
+    wait_till_button_appear('update_proxy.png', extra_time=0.1)
+    # time.sleep(0.05)
     pyautogui.hotkey('ctrl', 'v')
-    time.sleep(0.5)
+    time.sleep(0.1)
     locate_and_click('update_proxy.png')
     time.sleep(time_after_update_proxy)
 else:
@@ -130,8 +155,14 @@ else:
 
 # Run proxies
 locate_and_click('select_all_profile.png')
-time.sleep(2)
+wait_till_button_appear('run_proxy.png', extra_time=0.1)
+# time.sleep(0.5)
 locate_and_click('run_proxy.png')
+if locate_and_click('yes.png', timeout=2):
+    print("Clicked on 'yes.png' button.")
+# else:
+#     print("'yes.png' button did not appear. Continuing...")
+    
 time.sleep(time_after_run)
 
 # Copy link to clipboard
@@ -141,7 +172,7 @@ def activate_window(window):
     try:
         if window:
             window.activate()
-            time.sleep(2)  # Wait to ensure the window is activated
+            time.sleep(1.5)  # Wait to ensure the window is activated
         else:
             print("No window provided for activation.")
     except Exception as e:
@@ -151,8 +182,8 @@ def paste_and_press_enter(window_handle):
     try:
         app = Application(backend='uia').connect(handle=window_handle)
         window = app.window(handle=window_handle)
-        window.type_keys('^v', pause=0.08)
-        window.type_keys('{ENTER}', pause=0.05)
+        window.type_keys('^v', pause=0.1)
+        window.type_keys('{ENTER}', pause=0.2)
         print(f"Pasted content and pressed Enter in window handle: {window_handle}")
     except Exception as e:
         print(f"Failed to paste and press Enter in window handle: {window_handle}, Error: {e}")
@@ -181,7 +212,7 @@ async def click_point_in_website(window, coordinates):
     try:
         activate_window(window)
         pyautogui.click(coordinates)
-        await asyncio.sleep(1.5)  # Wait asynchronously
+        await asyncio.sleep(2)  # Wait asynchronously
     except Exception as e:
         print(f"Failed to click point in website: {window.title if window else 'Unknown'}, Error: {e}")
 
@@ -189,26 +220,25 @@ async def main():
     windows = gw.getAllWindows()
     windows_to_target = [window for window in windows if window.title.lower().startswith(prefix.lower())]
 
-    tasks = []
-
+    # Click the link in all windows
     for handle in window_handles:
         paste_and_press_enter(handle)
 
-    await asyncio.sleep(10)
+    await asyncio.sleep(10)  # Wait for all links to be clicked
 
+    link_click_tasks = []
     for window in windows_to_target:
-        tasks.append(click_point_in_window(window, 'click_on_link.png'))
+        link_click_tasks.append(click_point_in_window(window, 'click_on_link.png'))
 
-    await asyncio.gather(*tasks)
+    await asyncio.gather(*link_click_tasks)
     
-    await asyncio.sleep(15)
+    await asyncio.sleep(13)  # Wait for the actions to complete
 
-    tasks = []
-
+    website_click_tasks = []
     for window in windows_to_target:
-        tasks.append(click_point_in_website(window, (190, 360)))
+        website_click_tasks.append(click_point_in_website(window, website_coordinates))
 
-    await asyncio.gather(*tasks)
+    await asyncio.gather(*website_click_tasks)
 
 # Run the asynchronous main function
 asyncio.run(main())
@@ -221,7 +251,7 @@ def close_windows_with_title_starting_with(prefix):
         try:
             print(f"Closing window with title: {window.title}")
             window.close()
-            time.sleep(0.5)
+            time.sleep(0.2)
         except Exception as e:
             print(f"Failed to close window with title: {window.title}, Error: {e}")
 
@@ -232,7 +262,7 @@ def activate_window(title):
             window = windows[0]
             print(f"Activating window with title '{title}'")
             window.activate()
-            time.sleep(2)
+            time.sleep(1.4)
         else:
             print(f"Window with title '{title}' not found.")
     except Exception as e:
@@ -265,13 +295,15 @@ def listen_for_commands():
             if "delete all" in command.lower():
                 handle_delete_all()
                 activate_window(window_title)
-                time.sleep(0.5)
+                wait_till_button_appear('delete_button.png', extra_time=0.1)
                 locate_and_click('delete_button.png')
-                time.sleep(0.5)
-                locate_and_click('yes_button.png')
+                wait_till_button_appear('yes.png', extra_time=0.1)
+                locate_and_click('yes.png')
                 time.sleep(0.5)
 
                 break  # Exit the loop after handling
+            elif "stop" in command.lower():
+                break
             else:
                 print("No valid command recognized.")
         
