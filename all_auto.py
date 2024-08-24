@@ -21,7 +21,7 @@ prefix = "profile"  # Define the prefix for the window titles you want to target
 # Initialize the text-to-speech engine
 engine = pyttsx3.init()
 def speak(text):
-    engine.setProperty('rate', 130)
+    engine.setProperty('rate', 170)
     engine.say(text)
     engine.runAndWait()
 
@@ -114,6 +114,7 @@ def wait_till_button_appear(image_path, extra_time=0, timeout=15):
             print("Timeout reached. Button did not appear.")
             return 0  # Return 0 if timeout is reached
         
+speak(f"adding {profile_number} profiles")
 click_button('add_profile.png', profile_number)
 wait_till_button_appear('add_profile.png')
 
@@ -124,6 +125,7 @@ wait_till_button_appear('proxy_button.png', extra_time=0.1)
 
 # Click on proxy
 locate_and_click('proxy_button.png')
+speak(f"pasting {profile_number} proxies")
 wait_till_button_appear('paste_proxy.png', extra_time=0.1)
 # time.sleep(0.5)
 
@@ -306,6 +308,7 @@ def listen_for_commands():
                 locate_and_click('delete_button.png')
                 wait_till_button_appear('yes.png', extra_time=0.1)
                 locate_and_click('yes.png')
+                speak("procedure completed now you can run next proxies")
                 time.sleep(0.5)
 
                 break  # Exit the loop after handling
