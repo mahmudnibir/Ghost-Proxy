@@ -6,15 +6,24 @@ import pygetwindow as gw
 import speech_recognition as sr
 import asyncio
 from pywinauto import Application
+import pyttsx3
 
 # Variables
 profile_number = 10  # select as much as you need
-time_after_update_proxy = 20  # time to delete flags
-time_after_run = 20  # time to finish run
+time_after_update_proxy = 10  # time to delete flags
+time_after_run = 18  # time to finish run
 website_coordinates = (190, 360)  # position where to click at website
-first_link = "https://tinyurl.com/Mehedi-2308-5K"  # link to paste after run
+first_link = "https://tinyurl.com/Mehedi-2408-N5K"  # link to paste after run
 window_title = "Browser Profiles - GoLogin 3.3.53 Jupiter"  # The title of the window to switch to
 prefix = "profile"  # Define the prefix for the window titles you want to target
+
+
+# Initialize the text-to-speech engine
+engine = pyttsx3.init()
+def speak(text):
+    engine.setProperty('rate', 130)
+    engine.say(text)
+    engine.runAndWait()
 
 # Track the last activated window
 last_activated_window = None
@@ -158,11 +167,8 @@ locate_and_click('select_all_profile.png')
 wait_till_button_appear('run_proxy.png', extra_time=0.1)
 # time.sleep(0.5)
 locate_and_click('run_proxy.png')
-if locate_and_click('yes.png', timeout=2):
-    print("Clicked on 'yes.png' button.")
-# else:
-#     print("'yes.png' button did not appear. Continuing...")
-    
+# if locate_and_click('yes.png', timeout=2):
+#     print("Button Clicked...")
 time.sleep(time_after_run)
 
 # Copy link to clipboard
@@ -232,7 +238,7 @@ async def main():
 
     await asyncio.gather(*link_click_tasks)
     
-    await asyncio.sleep(13)  # Wait for the actions to complete
+    await asyncio.sleep(15)  # Wait for the actions to complete
 
     website_click_tasks = []
     for window in windows_to_target:
@@ -293,6 +299,7 @@ def listen_for_commands():
             print(f"You said: {command}")
 
             if "delete all" in command.lower():
+                speak("deleting all")
                 handle_delete_all()
                 activate_window(window_title)
                 wait_till_button_appear('delete_button.png', extra_time=0.1)
