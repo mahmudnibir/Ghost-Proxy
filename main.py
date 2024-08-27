@@ -1,3 +1,27 @@
+"""
+MIT License
+
+Copyright (c) 2024 Nibir Mahmud
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+"""
+
 import pyautogui
 import time
 import win32gui
@@ -9,15 +33,51 @@ from pywinauto import Application
 import pyttsx3
 import os
 from datetime import datetime
+import win32con
 
 # Variables
 profile_number = 10  # select as much as you need
 time_after_update_proxy = 10  # time to delete flags
 time_after_run = 20 # time to finish run
 website_coordinates = (190, 360)  # position where to click at website
-first_link = "https://tinyurl.com/Mehedi-2708-5K"  # link to paste after run
+first_link = "paste the link here"  # link to paste after run
 window_title = "Browser Profiles - GoLogin 3.3.53 Jupiter"  # The title of the window to switch to
 prefix = "profile"  # Define the prefix for the window titles you want to target
+
+def hide_window_from_taskbar(window_title_contains):
+    # Enumerate all windows and find the one with the given title
+    def enum_windows_callback(hwnd, windows):
+        if window_title_contains.lower() in win32gui.GetWindowText(hwnd).lower():
+            windows.append(hwnd)
+    
+    windows = []
+    win32gui.EnumWindows(enum_windows_callback, windows)
+
+    for hwnd in windows:
+        # Get the current extended window style
+        exstyle = win32gui.GetWindowLong(hwnd, win32con.GWL_EXSTYLE)
+        # Add the WS_EX_TOOLWINDOW style to hide it from the taskbar
+        new_exstyle = exstyle | win32con.WS_EX_TOOLWINDOW
+        win32gui.SetWindowLong(hwnd, win32con.GWL_EXSTYLE, new_exstyle)
+        # Show the window with the new style
+        win32gui.ShowWindow(hwnd, win32con.SW_SHOWNOACTIVATE)
+
+def restore_window(window_title_contains):
+    # Enumerate all windows and find the one with the given title
+    def enum_windows_callback(hwnd, windows):
+        if window_title_contains.lower() in win32gui.GetWindowText(hwnd).lower():
+            windows.append(hwnd)
+    
+    windows = []
+    win32gui.EnumWindows(enum_windows_callback, windows)
+
+    for hwnd in windows:
+        # Remove the WS_EX_TOOLWINDOW style to restore it to the taskbar
+        exstyle = win32gui.GetWindowLong(hwnd, win32con.GWL_EXSTYLE)
+        new_exstyle = exstyle & ~win32con.WS_EX_TOOLWINDOW
+        win32gui.SetWindowLong(hwnd, win32con.GWL_EXSTYLE, new_exstyle)
+        # Show the window normally
+        win32gui.ShowWindow(hwnd, win32con.SW_SHOWNORMAL)
 
 
 # Initialize the text-to-speech engine
@@ -73,17 +133,6 @@ def activate_window_contains(keyword):
 # Activate the window with "GoLogin" in the title
 activate_window_contains("GoLogin")
 
-# def click_if_exists(image_path, timeout=5):
-#     start_time = time.time()
-#     while time.time() - start_time < timeout:
-#         button_location = pyautogui.locateCenterOnScreen(image_path, confidence=0.8)
-#         if button_location:
-#             pyautogui.click(button_location)
-#             print(f"Clicked on '{image_path}' button.")
-#             return True
-#         time.sleep(1)  # Wait before retrying
-#     return False
-
 def click_button(image_path, profile_number, timeout=15):
     image_path = f'buttons/{image_path}'
     for _ in range(profile_number):
@@ -137,11 +186,8 @@ wait_till_button_appear('add_profile.png')
 # Select all profiles
 locate_and_click('select_all_profile.png')
 wait_till_button_appear('proxy_button.png', extra_time=0.1)
-# time.sleep(0.5)
 
-# Click on proxy
 locate_and_click('proxy_button.png')
-# speak(f"pasting {profile_number} proxies")
 wait_till_button_appear('paste_proxy.png', extra_time=0.1)
 # time.sleep(0.5)
 
@@ -186,17 +232,8 @@ wait_till_button_appear('run_proxy.png', extra_time=0.1)
 locate_and_click('run_proxy.png')
 
 
-# if locate_and_click('yes.png', timeout=2):
-#     print("Button Clicked...")
-
-
-# # Check and click 'Yes' button if it appears
-# if click_if_exists('yes.png'):
-#     print("Clicked 'Yes' button.")
-#     # Continue with the rest of the code after clicking 'Yes'
-# else:
-#     print("'Yes' button did not appear.")
-# #     # Continue with the rest of the code if 'Yes' button does not appear
+if locate_and_click('yes.png', timeout=2):
+    print("Button Clicked...")
 
 time.sleep(time_after_run)
 
@@ -335,17 +372,26 @@ def listen_for_commands():
                 speak("deleting all")
                 handle_delete_all()
                 activate_window(window_title)
-                time.sleep(3)
+                time.sleep(0.1)
+                hide_window_from_taskbar("Visual Studio Code")  # Hide VS Code
+                print("Visual Studio Code hidden")
+                time.sleep(1)
+
                 timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")  # Use timestamp for unique filename
                 screenshot_path = os.path.join(screenshot_folder, f"screenshot_{timestamp}.png")
                 screenshot = pyautogui.screenshot()
                 screenshot.save(screenshot_path)  # Save the full-screen screenshot
-                time.sleep(0.5)
+                time.sleep(0.1)
+
+                restore_window("Visual Studio Code")  # Restore VS Code after screenshots
+
                 wait_till_button_appear('delete_button.png', extra_time=0.1)
                 locate_and_click('delete_button.png')
                 wait_till_button_appear('yes.png', extra_time=0.1)
                 locate_and_click('yes.png')
                 speak("procedure completed now you can run next proxies")
+
+                restore_window("Visual Studio Code")  # Restore VS Code after screenshots
                 time.sleep(0.5)
 
                 break  # Exit the loop after handling
