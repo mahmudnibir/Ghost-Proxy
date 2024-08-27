@@ -21,7 +21,8 @@ Welcome to **GoLogin_auto_proxy**! This Python script is designed to automate th
 - **Required Python Libraries:** Install the libraries using:
 
   ```bash
-  pip install pyautogui pyperclip pygetwindow SpeechRecognition asyncio pywinauto pypiwin32
+  pip install -r requirements.txt
+
   ```
 
 ## **Installation**
