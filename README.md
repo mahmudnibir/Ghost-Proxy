@@ -1,8 +1,5 @@
-Here's an expanded version of your README with the additional sections included:
 
----
-
-# **Black Hat SEO 🚀**
+# **GoLogin_auto_proxy 🚀**
 
 Welcome to **GoLogin_auto_proxy**! This Python script is designed to automate the management and execution of proxy profiles in GoLogin. With just a few commands, you can handle everything from profile creation to proxy assignment and web interactions, all controlled by your voice! 🎤✨
 
