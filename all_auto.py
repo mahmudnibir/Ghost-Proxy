@@ -7,13 +7,15 @@ import speech_recognition as sr
 import asyncio
 from pywinauto import Application
 import pyttsx3
+import os
+from datetime import datetime
 
 # Variables
 profile_number = 10  # select as much as you need
 time_after_update_proxy = 10  # time to delete flags
-time_after_run = 18  # time to finish run
+time_after_run = 20 # time to finish run
 website_coordinates = (190, 360)  # position where to click at website
-first_link = "https://tinyurl.com/Mehedi-2408-N5K"  # link to paste after run
+first_link = "https://tinyurl.com/Mehedi-2708-5K"  # link to paste after run
 window_title = "Browser Profiles - GoLogin 3.3.53 Jupiter"  # The title of the window to switch to
 prefix = "profile"  # Define the prefix for the window titles you want to target
 
@@ -70,6 +72,17 @@ def activate_window_contains(keyword):
 # Activate the window with "GoLogin" in the title
 activate_window_contains("GoLogin")
 
+# def click_if_exists(image_path, timeout=5):
+#     start_time = time.time()
+#     while time.time() - start_time < timeout:
+#         button_location = pyautogui.locateCenterOnScreen(image_path, confidence=0.8)
+#         if button_location:
+#             pyautogui.click(button_location)
+#             print(f"Clicked on '{image_path}' button.")
+#             return True
+#         time.sleep(1)  # Wait before retrying
+#     return False
+
 def click_button(image_path, profile_number, timeout=15):
     for _ in range(profile_number):
         button_location = None
@@ -125,7 +138,7 @@ wait_till_button_appear('proxy_button.png', extra_time=0.1)
 
 # Click on proxy
 locate_and_click('proxy_button.png')
-speak(f"pasting {profile_number} proxies")
+# speak(f"pasting {profile_number} proxies")
 wait_till_button_appear('paste_proxy.png', extra_time=0.1)
 # time.sleep(0.5)
 
@@ -156,7 +169,6 @@ if proxies_to_paste:
     pyperclip.copy(proxies_to_paste)  # Copy the proxies to clipboard
     locate_and_click('paste_proxy.png')
     wait_till_button_appear('update_proxy.png', extra_time=0.1)
-    # time.sleep(0.05)
     pyautogui.hotkey('ctrl', 'v')
     time.sleep(0.1)
     locate_and_click('update_proxy.png')
@@ -169,8 +181,20 @@ locate_and_click('select_all_profile.png')
 wait_till_button_appear('run_proxy.png', extra_time=0.1)
 # time.sleep(0.5)
 locate_and_click('run_proxy.png')
+
+
 # if locate_and_click('yes.png', timeout=2):
 #     print("Button Clicked...")
+
+
+# # Check and click 'Yes' button if it appears
+# if click_if_exists('yes.png'):
+#     print("Clicked 'Yes' button.")
+#     # Continue with the rest of the code after clicking 'Yes'
+# else:
+#     print("'Yes' button did not appear.")
+# #     # Continue with the rest of the code if 'Yes' button does not appear
+
 time.sleep(time_after_run)
 
 # Copy link to clipboard
@@ -232,7 +256,7 @@ async def main():
     for handle in window_handles:
         paste_and_press_enter(handle)
 
-    await asyncio.sleep(10)  # Wait for all links to be clicked
+    await asyncio.sleep(12)  # Wait for all links to be clicked
 
     link_click_tasks = []
     for window in windows_to_target:
@@ -240,7 +264,7 @@ async def main():
 
     await asyncio.gather(*link_click_tasks)
     
-    await asyncio.sleep(15)  # Wait for the actions to complete
+    await asyncio.sleep(18)  # Wait for the actions to complete
 
     website_click_tasks = []
     for window in windows_to_target:
@@ -270,7 +294,7 @@ def activate_window(title):
             window = windows[0]
             print(f"Activating window with title '{title}'")
             window.activate()
-            time.sleep(1.4)
+            time.sleep(1)
         else:
             print(f"Window with title '{title}' not found.")
     except Exception as e:
@@ -296,6 +320,10 @@ def listen_for_commands():
             recognizer.adjust_for_ambient_noise(source)
             audio = recognizer.listen(source)
 
+        # Define the folder where screenshots will be saved
+        screenshot_folder = "screenshots"
+        os.makedirs(screenshot_folder, exist_ok=True)  # Create folder if it doesn't exist
+
         try:
             command = recognizer.recognize_google(audio)
             print(f"You said: {command}")
@@ -304,6 +332,12 @@ def listen_for_commands():
                 speak("deleting all")
                 handle_delete_all()
                 activate_window(window_title)
+                time.sleep(3)
+                timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")  # Use timestamp for unique filename
+                screenshot_path = os.path.join(screenshot_folder, f"screenshot_{timestamp}.png")
+                screenshot = pyautogui.screenshot()
+                screenshot.save(screenshot_path)  # Save the full-screen screenshot
+                time.sleep(0.5)
                 wait_till_button_appear('delete_button.png', extra_time=0.1)
                 locate_and_click('delete_button.png')
                 wait_till_button_appear('yes.png', extra_time=0.1)
@@ -320,7 +354,8 @@ def listen_for_commands():
         except sr.UnknownValueError:
             print("Sorry, I did not understand the audio.")
         except sr.RequestError:
-            print("Sorry, there was an issue with the request.")
+            print("Sorry, there was an issue with the request. Check your network connection and try again.")
+            speak("Sorry, there was an issue with the request. Check your network connection and try again.")
 
 # Call the function to listen for voice commands
 listen_for_commands()
