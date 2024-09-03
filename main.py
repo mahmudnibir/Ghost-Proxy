@@ -21,7 +21,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
-
+import json
 import pyautogui
 import time
 import win32gui
@@ -34,15 +34,35 @@ import pyttsx3
 import os
 from datetime import datetime
 import win32con
+import logging
+
+# Load configuration
+with open('config.json', 'r') as config_file:
+    config = json.load(config_file)
+
+profile_number = config['profile_number']
+time_after_update_proxy = config['time_after_update_proxy']
+time_after_run = config['time_after_run']
+website_coordinates = tuple(config['website_coordinates'])
+first_link = config['first_link']
+window_title = config['window_title']
+prefix = config['prefix']
+proxy_file_path = config['proxy_file_path']
+
+logging.basicConfig(
+    filename='executed_profiles.log',  # Name of the log file
+    level=logging.INFO,    # Set the log level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
+    format='%(asctime)s - %(levelname)s - %(message)s',  # Log message format
+)
 
 # Variables
-profile_number = 10  # select as much as you need
-time_after_update_proxy = 10  # time to delete flags
-time_after_run = 20 # time to finish run
-website_coordinates = (190, 360)  # position where to click at website
-first_link = "paste the link here"  # link to paste after run
-window_title = "Browser Profiles - GoLogin 3.3.53 Jupiter"  # The title of the window to switch to
-prefix = "profile"  # Define the prefix for the window titles you want to target
+# profile_number = 10 # select as much as you need
+# time_after_update_proxy = 13  # time to delete flags
+# time_after_run = 21 # time to finish run
+# website_coordinates = (190, 360)  # position where to click at website
+# first_link = "https://tinyurl.com/Mehedi-0309-N5k"  # link to paste after run
+# window_title = "Browser Profiles - GoLogin 3.3.53 Jupiter"  # The title of the window to switch to
+# prefix = "profile"  # Define the prefix for the window titles you want to target
 
 def hide_window_from_taskbar(window_title_contains):
     # Enumerate all windows and find the one with the given title
@@ -113,6 +133,28 @@ def locate_and_click(image_path, timeout=15):
             print(f"Button did not appear within the timeout period for '{image_path}'. Skipping...")
             return False  # Timeout, move on to the next task
 
+def yes_and_click(image_path, timeout=15):
+    image_path = f'buttons/{image_path}'
+    start_time = time.time()
+
+    while time.time() - start_time < timeout:
+        try:
+            button_location = pyautogui.locateCenterOnScreen(image_path, confidence=0.8)
+
+            if button_location:
+                pyautogui.click(button_location)
+                print(f"Clicked on the button at {button_location}")
+                return True  # Successfully clicked the button
+
+        except pyautogui.ImageNotFoundException:
+            # If image not found, just wait and retry
+            pass
+
+        time.sleep(1)  # Wait 1 second before the next attempt
+
+    print(f"Button did not appear within the timeout period for '{image_path}'. Skipping...")
+    return False  # Timeout, move on to the next task
+
 def activate_window_contains(keyword):
     global last_activated_window
     windows = gw.getWindowsWithTitle('')
@@ -142,7 +184,7 @@ def click_button(image_path, profile_number, timeout=15):
             try:
                 button_location = pyautogui.locateCenterOnScreen(image_path, confidence=0.7)
             except pyautogui.ImageNotFoundException:
-                print("Button not found. Retrying...")
+                print(f"Please open - {window_title} home page.Button not found. Retrying...")
                 time.sleep(0.1)  # Brief pause before retrying
                 continue
 
@@ -228,12 +270,13 @@ else:
 # Run proxies
 locate_and_click('select_all_profile.png')
 wait_till_button_appear('run_proxy.png', extra_time=0.1)
-# time.sleep(0.5)
 locate_and_click('run_proxy.png')
 
 
-if locate_and_click('yes.png', timeout=2):
-    print("Button Clicked...")
+# if locate_and_click('yes.png', timeout=2):
+#     print("Button Clicked...")
+yes_and_click('yes.png', timeout=2)
+
 
 time.sleep(time_after_run)
 
@@ -296,7 +339,7 @@ async def main():
     for handle in window_handles:
         paste_and_press_enter(handle)
 
-    await asyncio.sleep(12)  # Wait for all links to be clicked
+    await asyncio.sleep(15)  # Wait for all links to be clicked
 
     link_click_tasks = []
     for window in windows_to_target:
@@ -321,7 +364,7 @@ def close_windows_with_title_starting_with(prefix):
 
     for window in windows_to_close:
         try:
-            print(f"Closing window with title: {window.title}")
+            logging.info(f"Closing window with title: {window.title}")
             window.close()
             time.sleep(0.2)
         except Exception as e:
