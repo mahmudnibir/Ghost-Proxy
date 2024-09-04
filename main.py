@@ -54,12 +54,6 @@ prefix = config['prefix']
 proxy_file_path = config['proxy_file_path']
 double_click = config['double_click']
 
-# logging.basicConfig(
-#     filename='executed_profiles.log',  # Name of the log file
-#     level=logging.INFO,    # Set the log level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
-#     format='%(asctime)s - %(levelname)s - %(message)s',  # Log message format
-# )
-
 formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
 
 # Configure the logger for INFO level logs
@@ -155,7 +149,7 @@ def locate_and_click(image_path, timeout=15):
             return True  # Successfully clicked the button
 
         if time.time() - start_time > timeout:
-            debug_logger.debug(f"Button did not appear within the timeout period for '{image_path}'. Skipping...")
+            debug_logger.warning(f"Button did not appear within the timeout period for '{image_path}'. Skipping...")
             return False  # Timeout, move on to the next task
 
 def yes_and_click(image_path, timeout=15):
@@ -219,7 +213,7 @@ def click_button(image_path, profile_number, timeout=15):
                 break  # Exit the loop once the button is clicked
 
             if time.time() - start_time > timeout:
-                debug_logger.debug("Still waiting for the button to appear...")
+                debug_logger.warning("Still waiting for the button to appear...")
                 start_time = time.time()  # Reset the timer, continue waiting
 
 
@@ -233,7 +227,7 @@ def wait_till_button_appear(image_path, extra_time=0, timeout=15):
         try:
             button_location = pyautogui.locateCenterOnScreen(image_path, confidence=0.7)
         except pyautogui.ImageNotFoundException:
-            debug_logger.debug("Button not found. Retrying...")
+            debug_logger.warning("Button not found. Retrying...")
             time.sleep(0.1)  # Brief pause before retrying
             continue
         
@@ -314,7 +308,7 @@ def activate_window(window):
             window.activate()
             time.sleep(1.5)  # Wait to ensure the window is activated
         else:
-            debug_logger.debug("No window provided for activation.")
+            debug_logger.warning("No window provided for activation.")
     except Exception as e:
         warning_logger.warning(f"Failed to activate window: {window.title if window else 'Unknown'}, Error: {e}")
 
@@ -468,7 +462,7 @@ def listen_for_commands():
             elif "stop" in command.lower():
                 break
             else:
-                debug_logger.debug("No valid command recognized.")
+                debug_logger.warning("No valid command recognized.")
         
         except sr.UnknownValueError:
             warning_logger.warning("Sorry, I did not understand the audio.")
