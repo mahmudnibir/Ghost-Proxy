@@ -1,11 +1,14 @@
 {
      "profile_number": 10,
-     "time_after_update_proxy": 13,
-     "time_after_run": 21,
+     "time_after_update_proxy": 16,
+     "time_after_run": 25,
      "website_coordinates": [190, 360],
-     "first_link": "https://tinyurl.com/Mehedi-0309-N5k",
+     "first_link": "https://tinyurl.com/Mehedi-0409-5K",
      "window_title": "Browser Profiles - GoLogin 3.3.53 Jupiter",
      "prefix": "profile",
-     "proxy_file_path": "proxy.txt"
+     "proxy_file_path": "proxy.txt",
+     "log_file_info": "logs/executed_profiles.log",
+     "log_file_warning": "logs/warning.log",
+     "log_file_debug": "logs/debug.log",
+     "double_click": "yes"
  }
- 

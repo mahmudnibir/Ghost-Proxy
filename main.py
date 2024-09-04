@@ -40,6 +40,10 @@ import logging
 with open('config.json', 'r') as config_file:
     config = json.load(config_file)
 
+# Ensure the logs directory exists
+os.makedirs('logs', exist_ok=True)
+
+
 profile_number = config['profile_number']
 time_after_update_proxy = config['time_after_update_proxy']
 time_after_run = config['time_after_run']
@@ -48,21 +52,42 @@ first_link = config['first_link']
 window_title = config['window_title']
 prefix = config['prefix']
 proxy_file_path = config['proxy_file_path']
+double_click = config['double_click']
 
-logging.basicConfig(
-    filename='executed_profiles.log',  # Name of the log file
-    level=logging.INFO,    # Set the log level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
-    format='%(asctime)s - %(levelname)s - %(message)s',  # Log message format
-)
+# logging.basicConfig(
+#     filename='executed_profiles.log',  # Name of the log file
+#     level=logging.INFO,    # Set the log level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
+#     format='%(asctime)s - %(levelname)s - %(message)s',  # Log message format
+# )
 
-# Variables
-# profile_number = 10 # select as much as you need
-# time_after_update_proxy = 13  # time to delete flags
-# time_after_run = 21 # time to finish run
-# website_coordinates = (190, 360)  # position where to click at website
-# first_link = "https://tinyurl.com/Mehedi-0309-N5k"  # link to paste after run
-# window_title = "Browser Profiles - GoLogin 3.3.53 Jupiter"  # The title of the window to switch to
-# prefix = "profile"  # Define the prefix for the window titles you want to target
+formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+
+# Configure the logger for INFO level logs
+info_handler = logging.FileHandler(config['log_file_info'])
+info_handler.setLevel(logging.INFO)
+info_handler.setFormatter(formatter)
+info_logger = logging.getLogger('info_logger')
+info_logger.setLevel(logging.DEBUG)  # To ensure it captures INFO level messages
+info_logger.addHandler(info_handler)
+info_logger.propagate = False
+
+# Configure the logger for DEBUG level logs
+debug_handler = logging.FileHandler(config['log_file_debug'])
+debug_handler.setLevel(logging.DEBUG)
+debug_handler.setFormatter(formatter)
+debug_logger = logging.getLogger('debug_logger')
+debug_logger.setLevel(logging.DEBUG)
+debug_logger.addHandler(debug_handler)
+debug_logger.propagate = False
+
+# Configure the logger for WARNING level logs
+warning_handler = logging.FileHandler(config['log_file_warning'])
+warning_handler.setLevel(logging.WARNING)
+warning_handler.setFormatter(formatter)
+warning_logger = logging.getLogger('warning_logger')
+warning_logger.setLevel(logging.WARNING)
+warning_logger.addHandler(warning_handler)
+warning_logger.propagate = False
 
 def hide_window_from_taskbar(window_title_contains):
     # Enumerate all windows and find the one with the given title
@@ -126,11 +151,11 @@ def locate_and_click(image_path, timeout=15):
 
         if button_location:
             pyautogui.click(button_location)
-            print(f"Clicked on the button at {button_location}")
+            debug_logger.debug(f"Clicked on the button at {button_location}")
             return True  # Successfully clicked the button
 
         if time.time() - start_time > timeout:
-            print(f"Button did not appear within the timeout period for '{image_path}'. Skipping...")
+            debug_logger.debug(f"Button did not appear within the timeout period for '{image_path}'. Skipping...")
             return False  # Timeout, move on to the next task
 
 def yes_and_click(image_path, timeout=15):
@@ -143,16 +168,16 @@ def yes_and_click(image_path, timeout=15):
 
             if button_location:
                 pyautogui.click(button_location)
-                print(f"Clicked on the button at {button_location}")
+                debug_logger.debug(f"Clicked on the button at {button_location}")
                 return True  # Successfully clicked the button
 
         except pyautogui.ImageNotFoundException:
             # If image not found, just wait and retry
             pass
 
-        time.sleep(1)  # Wait 1 second before the next attempt
+        time.sleep(0.1)  # Wait 1 second before the next attempt
 
-    print(f"Button did not appear within the timeout period for '{image_path}'. Skipping...")
+    warning_logger.warning(f"Button did not appear within the timeout period for '{image_path}'. Skipping...")
     return False  # Timeout, move on to the next task
 
 def activate_window_contains(keyword):
@@ -162,7 +187,7 @@ def activate_window_contains(keyword):
 
     for window in windows:
         if isinstance(window.title, str) and keyword in window.title:
-            print(f"Activating window with title '{window.title}'")
+            debug_logger.debug(f"Activating window with title '{window.title}'")
             window.activate()  # Bring the window to the foreground
             time.sleep(1)  # Wait to ensure the window is activated
             last_activated_window = window
@@ -170,7 +195,7 @@ def activate_window_contains(keyword):
             break
 
     if not found:
-        print(f"No window with title containing '{keyword}' found.")
+        warning_logger.warning(f"No window with title containing '{keyword}' found.")
 
 # Activate the window with "GoLogin" in the title
 activate_window_contains("GoLogin")
@@ -184,17 +209,17 @@ def click_button(image_path, profile_number, timeout=15):
             try:
                 button_location = pyautogui.locateCenterOnScreen(image_path, confidence=0.7)
             except pyautogui.ImageNotFoundException:
-                print(f"Please open - {window_title} home page.Button not found. Retrying...")
+                warning_logger.warning(f"Please open - {window_title} home page.Button not found. Retrying...")
                 time.sleep(0.1)  # Brief pause before retrying
                 continue
 
             if button_location:
                 pyautogui.click(button_location)
-                print(f"Clicked on the button at {button_location}")
+                debug_logger.debug(f"Clicked on the button at {button_location}")
                 break  # Exit the loop once the button is clicked
 
             if time.time() - start_time > timeout:
-                print("Still waiting for the button to appear...")
+                debug_logger.debug("Still waiting for the button to appear...")
                 start_time = time.time()  # Reset the timer, continue waiting
 
 
@@ -208,17 +233,17 @@ def wait_till_button_appear(image_path, extra_time=0, timeout=15):
         try:
             button_location = pyautogui.locateCenterOnScreen(image_path, confidence=0.7)
         except pyautogui.ImageNotFoundException:
-            print("Button not found. Retrying...")
+            debug_logger.debug("Button not found. Retrying...")
             time.sleep(0.1)  # Brief pause before retrying
             continue
         
         if button_location:
-            print(f"Button found, waiting is over.")
+            debug_logger.debug(f"Button found, waiting is over.")
             time.sleep(extra_time)
             break  # Exit the loop once the button is found
         
         if time.time() - start_time > timeout:
-            print("Timeout reached. Button did not appear.")
+            warning_logger.warning("Timeout reached. Button did not appear.")
             return 0  # Return 0 if timeout is reached
         
 speak(f"adding {profile_number} profiles")
@@ -239,7 +264,7 @@ def get_proxies_from_file(file_path, num_proxies):
         proxies = file.readlines()
         
     if len(proxies) < num_proxies:
-        print("Not enough proxies in the file.")
+        warning_logger.warning("Not enough proxies in the file.")
         return None
 
     selected_proxies = proxies[:num_proxies]
@@ -265,7 +290,7 @@ if proxies_to_paste:
     locate_and_click('update_proxy.png')
     time.sleep(time_after_update_proxy)
 else:
-    print("Operation aborted due to insufficient proxies.")
+    warning_logger.warning("Operation aborted due to insufficient proxies.")
 
 # Run proxies
 locate_and_click('select_all_profile.png')
@@ -274,7 +299,7 @@ locate_and_click('run_proxy.png')
 
 
 # if locate_and_click('yes.png', timeout=2):
-#     print("Button Clicked...")
+#     debug_logger.debug("Button Clicked...")
 yes_and_click('yes.png', timeout=2)
 
 
@@ -289,9 +314,9 @@ def activate_window(window):
             window.activate()
             time.sleep(1.5)  # Wait to ensure the window is activated
         else:
-            print("No window provided for activation.")
+            debug_logger.debug("No window provided for activation.")
     except Exception as e:
-        print(f"Failed to activate window: {window.title if window else 'Unknown'}, Error: {e}")
+        warning_logger.warning(f"Failed to activate window: {window.title if window else 'Unknown'}, Error: {e}")
 
 def paste_and_press_enter(window_handle):
     try:
@@ -299,9 +324,9 @@ def paste_and_press_enter(window_handle):
         window = app.window(handle=window_handle)
         window.type_keys('^v', pause=0.1)
         window.type_keys('{ENTER}', pause=0.2)
-        print(f"Pasted content and pressed Enter in window handle: {window_handle}")
+        debug_logger.debug(f"Pasted content and pressed Enter in window handle: {window_handle}")
     except Exception as e:
-        print(f"Failed to paste and press Enter in window handle: {window_handle}, Error: {e}")
+        warning_logger.warning(f"Failed to paste and press Enter in window handle: {window_handle}, Error: {e}")
 
 def enum_windows_callback(hwnd, windows):
     title = win32gui.GetWindowText(hwnd)
@@ -316,12 +341,12 @@ async def click_point_in_window(window, image_name):
     try:
         activate_window(window)
         if locate_and_click(image_name, timeout=10):
-            print(f"Clicked on '{image_name}' in the window '{window.title}'")
+            debug_logger.debug(f"Clicked on '{image_name}' in the window '{window.title}'")
         else:
-            print(f"'{image_name}' button not found in window '{window.title}', skipping the task.")
+            debug_logger.debug(f"'{image_name}' button not found in window '{window.title}', skipping the task.")
         await asyncio.sleep(1)  # Wait asynchronously
     except Exception as e:
-        print(f"Failed to click point in window '{window.title}': {e}")
+        warning_logger.warning(f"Failed to click point in window '{window.title}': {e}")
 
 async def click_point_in_website(window, coordinates):
     try:
@@ -329,7 +354,7 @@ async def click_point_in_website(window, coordinates):
         pyautogui.click(coordinates)
         await asyncio.sleep(2)  # Wait asynchronously
     except Exception as e:
-        print(f"Failed to click point in website: {window.title if window else 'Unknown'}, Error: {e}")
+        warning_logger.warning(f"Failed to click point in website: {window.title if window else 'Unknown'}, Error: {e}")
 
 async def main():
     windows = gw.getAllWindows()
@@ -347,13 +372,15 @@ async def main():
 
     await asyncio.gather(*link_click_tasks)
     
-    await asyncio.sleep(18)  # Wait for the actions to complete
+    if double_click =="yes":
 
-    website_click_tasks = []
-    for window in windows_to_target:
-        website_click_tasks.append(click_point_in_website(window, website_coordinates))
+        await asyncio.sleep(18)  # Wait for the actions to complete
 
-    await asyncio.gather(*website_click_tasks)
+        website_click_tasks = []
+        for window in windows_to_target:
+            website_click_tasks.append(click_point_in_website(window, website_coordinates))
+
+        await asyncio.gather(*website_click_tasks)
 
 # Run the asynchronous main function
 asyncio.run(main())
@@ -364,39 +391,39 @@ def close_windows_with_title_starting_with(prefix):
 
     for window in windows_to_close:
         try:
-            logging.info(f"Closing window with title: {window.title}")
+            info_logger.info(f"Task successfully executed: {window.title}")
             window.close()
             time.sleep(0.2)
         except Exception as e:
-            print(f"Failed to close window with title: {window.title}, Error: {e}")
+            warning_logger.warning(f"Failed to close window with title: {window.title}, Error: {e}")
 
 def activate_window(title):
     try:
         windows = gw.getWindowsWithTitle(title)
         if windows:
             window = windows[0]
-            print(f"Activating window with title '{title}'")
+            debug_logger.debug(f"Activating window with title '{title}'")
             window.activate()
             time.sleep(1)
         else:
-            print(f"Window with title '{title}' not found.")
+            debug_logger.debug(f"Window with title '{title}' not found.")
     except Exception as e:
-        print(f"Error activating window with title '{title}': {e}")
+        warning_logger.warning(f"Error activating window with title '{title}': {e}")
 
 def handle_delete_all():
     global last_activated_window
     if last_activated_window:
-        print(f"Activating last window with title '{last_activated_window.title}'")
+        debug_logger.debug(f"Activating last window with title '{last_activated_window.title}'")
         activate_window(last_activated_window.title)
         close_windows_with_title_starting_with(prefix)
     else:
-        print("No window was activated previously.")
+        warning_logger.warning("No window was activated previously.")
 
 def listen_for_commands():
     recognizer = sr.Recognizer()
     microphone = sr.Microphone()
 
-    print("Listening for command...")
+    debug_logger.debug("Listening for command...")
 
     while True:
         with microphone as source:
@@ -409,7 +436,7 @@ def listen_for_commands():
 
         try:
             command = recognizer.recognize_google(audio)
-            print(f"You said: {command}")
+            debug_logger.debug(f"You said: {command}")
 
             if "delete all" in command.lower():
                 speak("deleting all")
@@ -417,7 +444,7 @@ def listen_for_commands():
                 activate_window(window_title)
                 time.sleep(0.1)
                 hide_window_from_taskbar("Visual Studio Code")  # Hide VS Code
-                print("Visual Studio Code hidden")
+                debug_logger.debug("Visual Studio Code hidden")
                 time.sleep(1)
 
                 timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")  # Use timestamp for unique filename
@@ -441,12 +468,12 @@ def listen_for_commands():
             elif "stop" in command.lower():
                 break
             else:
-                print("No valid command recognized.")
+                debug_logger.debug("No valid command recognized.")
         
         except sr.UnknownValueError:
-            print("Sorry, I did not understand the audio.")
+            warning_logger.warning("Sorry, I did not understand the audio.")
         except sr.RequestError:
-            print("Sorry, there was an issue with the request. Check your network connection and try again.")
+            warning_logger.warning("Sorry, there was an issue with the request. Check your network connection and try again.")
             speak("Sorry, there was an issue with the request. Check your network connection and try again.")
 
 # Call the function to listen for voice commands
