@@ -83,6 +83,25 @@ warning_logger.setLevel(logging.WARNING)
 warning_logger.addHandler(warning_handler)
 warning_logger.propagate = False
 
+# Configure the logger for ERROR level logs
+error_handler = logging.FileHandler(config['log_file_error'])
+error_handler.setLevel(logging.ERROR)
+error_handler.setFormatter(formatter)
+error_logger = logging.getLogger('error_logger')
+error_logger.setLevel(logging.ERROR)
+error_logger.addHandler(error_handler)
+error_logger.propagate = False
+
+engine = pyttsx3.init()
+
+def speak(text):
+    engine.setProperty('rate', 170)
+    engine.say(text)
+    engine.runAndWait()
+
+# Track the last activated window
+last_activated_window = None
+
 def hide_window_from_taskbar(window_title_contains):
     # Enumerate all windows and find the one with the given title
     def enum_windows_callback(hwnd, windows):
@@ -117,19 +136,6 @@ def restore_window(window_title_contains):
         win32gui.SetWindowLong(hwnd, win32con.GWL_EXSTYLE, new_exstyle)
         # Show the window normally
         win32gui.ShowWindow(hwnd, win32con.SW_SHOWNORMAL)
-
-
-# Initialize the text-to-speech engine
-engine = pyttsx3.init()
-def speak(text):
-    engine.setProperty('rate', 170)
-    engine.say(text)
-    engine.runAndWait()
-
-# Track the last activated window
-last_activated_window = None
-
-time.sleep(1)
 
 def locate_and_click(image_path, timeout=15):
     image_path = f'buttons/{image_path}'
@@ -189,7 +195,7 @@ def activate_window_contains(keyword):
             break
 
     if not found:
-        warning_logger.warning(f"No window with title containing '{keyword}' found.")
+        error_logger.error(f"No window with title containing '{keyword}' found.")
 
 # Activate the window with "GoLogin" in the title
 activate_window_contains("GoLogin")
@@ -204,7 +210,7 @@ def click_button(image_path, profile_number, timeout=15):
                 button_location = pyautogui.locateCenterOnScreen(image_path, confidence=0.7)
             except pyautogui.ImageNotFoundException:
                 warning_logger.warning(f"Please open - {window_title} home page.Button not found. Retrying...")
-                time.sleep(0.1)  # Brief pause before retrying
+                time.sleep(1)  # Brief pause before retrying
                 continue
 
             if button_location:
@@ -213,12 +219,12 @@ def click_button(image_path, profile_number, timeout=15):
                 break  # Exit the loop once the button is clicked
 
             if time.time() - start_time > timeout:
-                debug_logger.warning("Still waiting for the button to appear...")
+                debug_logger.debug("Still waiting for the button to appear...")
                 start_time = time.time()  # Reset the timer, continue waiting
 
 
 #waits till next button appears. this way it reduces time or time related errors.
-def wait_till_button_appear(image_path, extra_time=0, timeout=15):
+def wait_till_button_appear(image_path, extra_time=0, timeout=30):
     image_path = f'buttons/{image_path}'
     button_location = None
     start_time = time.time()
@@ -227,7 +233,7 @@ def wait_till_button_appear(image_path, extra_time=0, timeout=15):
         try:
             button_location = pyautogui.locateCenterOnScreen(image_path, confidence=0.7)
         except pyautogui.ImageNotFoundException:
-            debug_logger.warning("Button not found. Retrying...")
+            warning_logger.warning("Button not found. Retrying...")
             time.sleep(0.1)  # Brief pause before retrying
             continue
         
@@ -237,7 +243,7 @@ def wait_till_button_appear(image_path, extra_time=0, timeout=15):
             break  # Exit the loop once the button is found
         
         if time.time() - start_time > timeout:
-            warning_logger.warning("Timeout reached. Button did not appear.")
+            error_logger.error("Timeout reached. Button did not appear.")
             return 0  # Return 0 if timeout is reached
         
 speak(f"adding {profile_number} profiles")
@@ -250,7 +256,6 @@ wait_till_button_appear('proxy_button.png', extra_time=0.1)
 
 locate_and_click('proxy_button.png')
 wait_till_button_appear('paste_proxy.png', extra_time=0.1)
-# time.sleep(0.5)
 
 # Function to read proxies from file and cut the required number
 def get_proxies_from_file(file_path, num_proxies):
@@ -258,7 +263,7 @@ def get_proxies_from_file(file_path, num_proxies):
         proxies = file.readlines()
         
     if len(proxies) < num_proxies:
-        warning_logger.warning("Not enough proxies in the file.")
+        error_logger.error("Not enough proxies in the file.")
         return None
 
     selected_proxies = proxies[:num_proxies]
@@ -268,9 +273,6 @@ def get_proxies_from_file(file_path, num_proxies):
         file.writelines(remaining_proxies)
     
     return ''.join(selected_proxies)
-
-# File path of the proxy.txt
-proxy_file_path = "proxy.txt"
 
 # Get the proxies to paste
 proxies_to_paste = get_proxies_from_file(proxy_file_path, profile_number)
@@ -284,19 +286,15 @@ if proxies_to_paste:
     locate_and_click('update_proxy.png')
     time.sleep(time_after_update_proxy)
 else:
-    warning_logger.warning("Operation aborted due to insufficient proxies.")
+    error_logger.error("Operation aborted due to insufficient proxies.")
+    speak("Operation aborted due to insufficient proxies.")
 
 # Run proxies
 locate_and_click('select_all_profile.png')
 wait_till_button_appear('run_proxy.png', extra_time=0.1)
 locate_and_click('run_proxy.png')
 
-
-# if locate_and_click('yes.png', timeout=2):
-#     debug_logger.debug("Button Clicked...")
 yes_and_click('yes.png', timeout=2)
-
-
 time.sleep(time_after_run)
 
 # Copy link to clipboard
@@ -310,7 +308,7 @@ def activate_window(window):
         else:
             debug_logger.warning("No window provided for activation.")
     except Exception as e:
-        warning_logger.warning(f"Failed to activate window: {window.title if window else 'Unknown'}, Error: {e}")
+        error_logger.error(f"Failed to activate window: {window.title if window else 'Unknown'}, Error: {e}")
 
 def paste_and_press_enter(window_handle):
     try:
@@ -320,7 +318,7 @@ def paste_and_press_enter(window_handle):
         window.type_keys('{ENTER}', pause=0.2)
         debug_logger.debug(f"Pasted content and pressed Enter in window handle: {window_handle}")
     except Exception as e:
-        warning_logger.warning(f"Failed to paste and press Enter in window handle: {window_handle}, Error: {e}")
+        error_logger.error(f"Failed to paste and press Enter in window handle: {window_handle}, Error: {e}")
 
 def enum_windows_callback(hwnd, windows):
     title = win32gui.GetWindowText(hwnd)
@@ -337,10 +335,10 @@ async def click_point_in_window(window, image_name):
         if locate_and_click(image_name, timeout=10):
             debug_logger.debug(f"Clicked on '{image_name}' in the window '{window.title}'")
         else:
-            debug_logger.debug(f"'{image_name}' button not found in window '{window.title}', skipping the task.")
+            warning_logger.warning(f"'{image_name}' button not found in window '{window.title}', skipping the task.")
         await asyncio.sleep(1)  # Wait asynchronously
     except Exception as e:
-        warning_logger.warning(f"Failed to click point in window '{window.title}': {e}")
+        error_logger.error(f"Failed to click point in window '{window.title}': {e}")
 
 async def click_point_in_website(window, coordinates):
     try:
@@ -348,7 +346,7 @@ async def click_point_in_website(window, coordinates):
         pyautogui.click(coordinates)
         await asyncio.sleep(2)  # Wait asynchronously
     except Exception as e:
-        warning_logger.warning(f"Failed to click point in website: {window.title if window else 'Unknown'}, Error: {e}")
+        error_logger.error(f"Failed to click point in website: {window.title if window else 'Unknown'}, Error: {e}")
 
 async def main():
     windows = gw.getAllWindows()
@@ -389,7 +387,7 @@ def close_windows_with_title_starting_with(prefix):
             window.close()
             time.sleep(0.2)
         except Exception as e:
-            warning_logger.warning(f"Failed to close window with title: {window.title}, Error: {e}")
+            error_logger.error(f"Failed to close window with title: {window.title}, Error: {e}")
 
 def activate_window(title):
     try:
@@ -400,9 +398,9 @@ def activate_window(title):
             window.activate()
             time.sleep(1)
         else:
-            debug_logger.debug(f"Window with title '{title}' not found.")
+            warning_logger.warning(f"Window with title '{title}' not found.")
     except Exception as e:
-        warning_logger.warning(f"Error activating window with title '{title}': {e}")
+        error_logger.error(f"Error activating window with title '{title}': {e}")
 
 def handle_delete_all():
     global last_activated_window
@@ -411,7 +409,7 @@ def handle_delete_all():
         activate_window(last_activated_window.title)
         close_windows_with_title_starting_with(prefix)
     else:
-        warning_logger.warning("No window was activated previously.")
+        error_logger.error("No window was activated previously.")
 
 def listen_for_commands():
     recognizer = sr.Recognizer()
@@ -467,7 +465,7 @@ def listen_for_commands():
         except sr.UnknownValueError:
             warning_logger.warning("Sorry, I did not understand the audio.")
         except sr.RequestError:
-            warning_logger.warning("Sorry, there was an issue with the request. Check your network connection and try again.")
+            error_logger.error("Network Connection Error. Check Network Connection and try again.")
             speak("Sorry, there was an issue with the request. Check your network connection and try again.")
 
 # Call the function to listen for voice commands
