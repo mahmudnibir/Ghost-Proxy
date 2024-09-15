@@ -11,5 +11,5 @@
      "log_file_warning": "logs/warning.log",
      "log_file_debug": "logs/debug.log",
      "log_file_error": "logs/error.log",
-     "double_click": "yes"
+     "double_click": "no"
  }

@@ -1,7 +1,6 @@
+# **Ghost Proxy 🚀**
 
-# **GoLogin_auto_proxy 🚀**
-
-Welcome to **GoLogin_auto_proxy**! This Python script is designed to automate the management and execution of proxy profiles in GoLogin. With just a few commands, you can handle everything from profile creation to proxy assignment and web interactions, all controlled by your voice! 🎤✨
+Welcome to **Ghost Proxy**! This Python script is designed to automate the management and execution of proxy profiles in GoLogin. With just a few commands, you can handle everything from profile creation to proxy assignment and web interactions, all controlled by your voice! 🎤✨
 
 ## **Features**
 
@@ -19,7 +18,6 @@ Welcome to **GoLogin_auto_proxy**! This Python script is designed to automate th
 
   ```bash
   pip install -r requirements.txt
-
   ```
 
 ## **Installation**
@@ -28,10 +26,10 @@ Follow these steps to set up and run the script:
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/GoLogin_auto_proxy.git
+git clone https://github.com/mahmudnibir/Ghost_Proxy.git
 
 # Navigate to the project directory
-cd GoLogin_auto_proxy
+cd Ghost_Proxy
 
 # Install the required libraries
 pip install -r requirements.txt
@@ -103,3 +101,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## **Contact**
 
 If you have any questions, feel free to contact me at [nibirbbkr@gmail.com](mailto:nibirbbkr@gmail.com).
+
