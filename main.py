@@ -366,7 +366,7 @@ async def main():
     
     if double_click =="yes":
 
-        await asyncio.sleep(18)  # Wait for the actions to complete
+        await asyncio.sleep(13)  # Wait for the actions to complete
 
         website_click_tasks = []
         for window in windows_to_target:
@@ -460,13 +460,14 @@ def listen_for_commands():
             elif "stop" in command.lower():
                 break
             else:
-                debug_logger.warning("No valid command recognized.")
+                warning_logger.warning("No valid command recognized.")
         
         except sr.UnknownValueError:
             warning_logger.warning("Sorry, I did not understand the audio.")
         except sr.RequestError:
-            error_logger.error("Network Connection Error. Check Network Connection and try again.")
+            error_logger.error("Network Connection Error . Check Network Connection and try again.")
             speak("Sorry, there was an issue with the request. Check your network connection and try again.")
 
 # Call the function to listen for voice commands
 listen_for_commands()
+# 188,472
