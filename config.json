@@ -1,9 +1,10 @@
 {
+    "loop_numbers": 8,
      "profile_number": 10,
-     "time_after_update_proxy": 15,
+     "time_after_update_proxy": 5,
      "time_after_run": 20,
-     "website_coordinates": [185, 360],
-     "first_link": "https://url.lr-technology.com/Suza-1",
+     "website_coordinates": [500, 400],
+     "first_link": "https://tinyurl.com/nwshat-usday17",
      "window_title": "Browser Profiles - GoLogin 3.3.53 Jupiter",
      "prefix": "profile",
      "proxy_file_path": "proxy.txt",
@@ -12,5 +13,5 @@
      "log_file_debug": "logs/debug.log",
      "log_file_error": "logs/error.log",
      "double_click": "no",
-     "loop_numbers": 4
+     "scroll": "no"
  }
